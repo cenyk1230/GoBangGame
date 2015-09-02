@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QMouseEvent>
 #include <map.h>
+#include <gamelogic.h>
 
 namespace Ui {
 class Dialog;
@@ -26,6 +27,7 @@ public:
     void mousePressEvent(QMouseEvent *);
     void calcSend(int, int);
     void putPoint(int, int);
+    void gameOver(bool);
     
 public slots:
     void chooseFightModelWidget();
@@ -49,16 +51,18 @@ private:
     bool isGameBegin;
     Map::Player player;
     Map *map;
+    GameLogic *gameLogic;
     QString myIP;
     QWidget *widget[10];
     QPushButton *networkFightButton, *personAIFightButton;
     QPushButton *createHostButton, *joinHostButton;
     QPushButton *OKWaitButton, *cancelWaitButton;
     QPushButton *OKJoinButton, *cancelJoinButton;
+    QPushButton *OKGameOverButton;
     QPushButton *numberButton[10];
     QPushButton *dotButton, *delButton;
     QLineEdit *IPEdit;
-    QDialog *createHostDialog, *joinHostDialog;
+    QDialog *createHostDialog, *joinHostDialog, *gameOverDialog;
     QTcpServer *listenSocket;
     QTcpSocket *readWriteSocket;
 };

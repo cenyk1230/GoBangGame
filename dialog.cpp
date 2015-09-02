@@ -29,9 +29,8 @@ Dialog::Dialog(QWidget *parent) :
     listenSocket = nullptr;
     readWriteSocket = nullptr;
     map = new Map();
-    
-    //test
-    //prepareGameWidget();
+    gameLogic = new GameLogic(map);
+   
     
     chooseFightModelWidget();
 }
@@ -235,6 +234,10 @@ void Dialog::calcRead() {
     else
         map->curPlayer = Map::Black;
     update();
+    
+    if (gameLogic->checkWin()) {
+        gameOver(0);
+    }
 }
 
 void Dialog::mousePressEvent(QMouseEvent *event) {
@@ -268,6 +271,10 @@ void Dialog::putPoint(int x, int y) {
     else
         map->curPlayer = Map::Black;
     update();
+    
+    if (gameLogic->checkWin()) {
+        gameOver(1);
+    }
 }
 
 void Dialog::calcSend(int x, int y) {   
@@ -312,4 +319,19 @@ void Dialog::paintEvent(QPaintEvent *event) {
             else
                 DrawPoint(painter, i, j, 24, Qt::white);
         }
+}
+
+void Dialog::gameOver(bool isWin) {
+    disconnect(readWriteSocket, SIGNAL(readyRead()), this, SLOT(calcRead()));
+    
+    gameOverDialog = new QDialog();
+    gameOverDialog->setWindowTitle("Game Over");
+    gameOverDialog->setFixedSize(300, 200);
+    QVBoxLayout *vt = new QVBoxLayout(gameOverDialog);
+    QLabel *label = new QLabel(isWin ? "你赢了!" : "你输了!", gameOverDialog);
+    OKGameOverButton = new QPushButton("确定", gameOverDialog);
+    vt->addWidget(label, 0, Qt::AlignHCenter);
+    vt->addWidget(OKGameOverButton, 0, Qt::AlignHCenter);
+    connect(OKGameOverButton, SIGNAL(clicked(bool)), gameOverDialog, SLOT(close()));
+    gameOverDialog->show();
 }

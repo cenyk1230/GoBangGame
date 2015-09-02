@@ -1,6 +1,8 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include <cstring>
+
 class Map {
 public:
     int arr[15][15];
