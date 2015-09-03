@@ -10,6 +10,7 @@
 #include <QPainter>
 #include <QMessageBox>
 #include <QDateTime>
+#include <QSound>
 #include <QFileDialog>
 
 const static int INIT_WIDTH = 300;
@@ -164,7 +165,7 @@ void Dialog::createHost() {
     QLabel *IPLabel = new QLabel("Host IP: ", createHostDialog);
     IPEdit = new QLineEdit(myIP, createHostDialog);
     cancelWaitButton = new QPushButton("取消", createHostDialog);
-    OKWaitButton = new QPushButton("确定", createHostDialog);
+    OKWaitButton = new QPushButton("连接", createHostDialog);
     QVBoxLayout *vt = new QVBoxLayout(createHostDialog);
     QHBoxLayout *ht = new QHBoxLayout();
     QHBoxLayout *ht2 = new QHBoxLayout();
@@ -182,13 +183,18 @@ void Dialog::createHost() {
 }
 
 void Dialog::cancelCreateHost() {
-    delete createHostDialog;
+    if (listenSocket != nullptr) {
+        delete listenSocket;
+        listenSocket = nullptr;
+    }
+    OKWaitButton->setEnabled(true);
+    //delete createHostDialog;
 }
 
 void Dialog::joinHost() {
     joinHostDialog = new QDialog();
     joinHostDialog->setWindowTitle("准备加入主机");
-    joinHostDialog->setFixedSize(300, 400);
+    joinHostDialog->setFixedSize(300, 320);
     
     QVBoxLayout *vt = new QVBoxLayout(joinHostDialog);
     QGridLayout *gt = new QGridLayout();
@@ -245,7 +251,8 @@ void Dialog::softKeyInput(QString st) {
 }
 
 void Dialog::waitForConnect() {
-    delete createHostDialog;
+    //delete createHostDialog;
+    OKWaitButton->setDisabled(true);
     if (listenSocket != nullptr) {
         delete listenSocket;
     }
@@ -255,6 +262,7 @@ void Dialog::waitForConnect() {
 }
 
 void Dialog::acceptConnection() {
+    delete createHostDialog;
     if (readWriteSocket != nullptr) {
         delete readWriteSocket;
     }
@@ -286,6 +294,7 @@ void Dialog::cancelJoinHost() {
 
 void Dialog::prepareToRead() {
     qDebug() << "Connected!";
+    qDebug() << readWriteSocket->peerAddress();
     connect(readWriteSocket, SIGNAL(readyRead()), this, SLOT(calcRead()));
     sendUsername();
 }
@@ -749,6 +758,12 @@ void Dialog::gameOver(bool isWin) {
     disconnect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
     timer->stop();
     
+    
+    if (isWin) {
+        QSound::play(":/sound/sound/win.wav");
+    }else {
+        QSound::play(":/sound/sound/lose.wav");
+    }
     gameOverDialog = new QDialog();
     gameOverDialog->setWindowTitle("Game Over");
     gameOverDialog->setFixedSize(300, 200);
