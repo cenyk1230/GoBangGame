@@ -1,2 +1,6 @@
-<RCC/>
-
+<RCC>
+    <qresource prefix="/sound">
+        <file>sound/win.wav</file>
+        <file>sound/lose.wav</file>
+    </qresource>
+</RCC>

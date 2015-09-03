@@ -35,6 +35,7 @@ public:
     void changePlayer();
     void renewTime();
     bool checkNoMyChess();
+    void InitialGame();
     
 public slots:
     void setNameAvatarWidget();

@@ -515,6 +515,28 @@ bool Dialog::checkNoMyChess() {
     return true;
 }
 
+void Dialog::InitialGame() {
+    memset(map->arr, -1, sizeof map->arr);
+    map->curPlayer = Map::Black;
+    map->place.clear();
+    
+    mySingleTime = opSingleTime = 20;
+    mySingleTimeLCD->display(20);
+    opSingleTimeLCD->display(20);
+    myTotalTimeLCD->display(0);
+    opTotalTimeLCD->display(0);
+    myTotalTime = opTotalTime = 0;
+    
+    isGameBegin = isOpBegin = isMeBegin = false;
+    beginButton->setEnabled(true);
+    withdrawButton->setDisabled(true);
+    withDrawTime = 0;
+    
+    timer->stop();
+    
+    update();
+}
+
 void Dialog::calcRead() {
     /*if (opAvatarPixmap.isNull()) {
         opAvatarPixmap.loadFromData(readWriteSocket->readAll());
@@ -546,14 +568,16 @@ void Dialog::calcRead() {
         QMessageBox::StandardButton b1 = QMessageBox::question(NULL, "Request", "对方请求退出游戏");
         if (b1 == QMessageBox::Yes) {
             sendMessage("agreeQuit");
-            this->close();
+            InitialGame();
+            //this->close();
         }else {
             sendMessage("disagreeQuit");
         }
         return;
     }
     if (info == "agreeQuit") {
-        this->close();
+        InitialGame();
+        //this->close();
         return;
     }
     if (info == "disagreeQuit") {
