@@ -42,6 +42,8 @@ Dialog::Dialog(QWidget *parent) :
     timer = new QTimer();
     timer->setInterval(1000);
     gameLogic = new GameLogic(map);
+    background.load(":/picture/picture/background.jpg");
+    background = background.scaled(QSize(GAME_WIDTH, GAME_HEIGHT), Qt::KeepAspectRatio);
     
     boardWidget = new QWidget(this);
     boardWidget->setFixedSize(600, 600);
@@ -742,8 +744,11 @@ void Dialog::paintEvent(QPaintEvent *event) {
     
 
     QPainter painter(this);
-    painter.setPen(Qt::yellow);
-    painter.setBrush(Qt::yellow);
+    
+    painter.drawPixmap(0, 0, width(), height(), background);
+    QColor color = QColor(200, 124, 30, 128);
+    painter.setPen(color);
+    painter.setBrush(color);
     painter.drawRect(0, 0, 600, 600);
     for (int i = 0; i < 15; ++i) {
         painter.setPen(Qt::black);

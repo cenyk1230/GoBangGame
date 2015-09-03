@@ -89,6 +89,7 @@ private:
     QPushButton *chooseAvatarButton, *OKchooseButton;
     QPushButton *beginButton, *quitButton, *withdrawButton, *saveButton, *loadButton;
     QPixmap myAvatarPixmap, opAvatarPixmap;
+    QPixmap background;
     QLabel *chooseAvatarLabel, *myAvatarLabel, *opAvatarLabel, *myNameLabel, *opNameLabel;
     QLineEdit *chooseNameEdit;
     QLineEdit *IPEdit;
