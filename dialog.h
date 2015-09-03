@@ -33,6 +33,8 @@ public:
     void gameOver(bool);
     void sendMessage(QString);
     void changePlayer();
+    void renewTime();
+    bool checkNoMyChess();
     
 public slots:
     void setNameAvatarWidget();
@@ -55,6 +57,10 @@ public slots:
     void sendUsername();
     void prepareToBegin();
     void onTimerOut();
+    void requestForQuit();
+    void requestForSave();
+    void requestForLoad();
+    void requestForWithdraw();
     
 private:
     Ui::Dialog *ui;
@@ -65,6 +71,7 @@ private:
     bool isOpBegin, isMeBegin;
     int mySingleTime, opSingleTime;
     int myTotalTime, opTotalTime;
+    int withDrawTime;
     Map::Player player;
     Map *map;
     GameLogic *gameLogic;

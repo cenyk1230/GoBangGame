@@ -8,6 +8,8 @@
 #include <QDebug>
 #include <QSignalMapper>
 #include <QPainter>
+#include <QMessageBox>
+#include <QDateTime>
 #include <QFileDialog>
 
 const static int INIT_WIDTH = 300;
@@ -34,6 +36,7 @@ Dialog::Dialog(QWidget *parent) :
     opUserName = "";
     mySingleTime = opSingleTime = 20;
     myTotalTime = opTotalTime = 0;
+    withDrawTime = 0;
     map = new Map();
     timer = new QTimer();
     timer->setInterval(1000);
@@ -45,8 +48,6 @@ Dialog::Dialog(QWidget *parent) :
     myInfoWidget->setFixedWidth(200);
     opInfoWidget = new QWidget();
     opInfoWidget->setFixedWidth(200);
-    
-    connect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
     
     setNameAvatarWidget();
 }
@@ -90,7 +91,8 @@ void Dialog::setMyInfo() {
     if (myUserName == "") {
         myUserName = "Username";
     }
-    chooseFightModelWidget();
+    //chooseFightModelWidget();
+    networkGameWidget();
 }
 
 void Dialog::chooseAvatarFromFile() {
@@ -99,7 +101,8 @@ void Dialog::chooseAvatarFromFile() {
     QSize size(chooseAvatarLabel->width(), chooseAvatarLabel->height());
     QPixmap pixmap2 = pixmap.scaled(size, Qt::KeepAspectRatio);
     if (!pixmap2.isNull()) {
-        myAvatarFileName = st;
+        QStringList info = st.split("/");
+        myAvatarFileName = info.at(info.size() - 1);
         myAvatarPixmap = pixmap2;
         chooseAvatarLabel->setPixmap(pixmap2);
     }
@@ -185,7 +188,7 @@ void Dialog::cancelCreateHost() {
 void Dialog::joinHost() {
     joinHostDialog = new QDialog();
     joinHostDialog->setWindowTitle("准备加入主机");
-    joinHostDialog->setFixedSize(400, 400);
+    joinHostDialog->setFixedSize(300, 400);
     
     QVBoxLayout *vt = new QVBoxLayout(joinHostDialog);
     QGridLayout *gt = new QGridLayout();
@@ -214,7 +217,7 @@ void Dialog::joinHost() {
             gt->addWidget(numberButton[i], 2 - (i - 1) /  3, (i - 1) % 3);
     }
     dotButton = new QPushButton(".", joinHostDialog);
-    delButton = new QPushButton("Backspace", joinHostDialog);
+    delButton = new QPushButton("退格", joinHostDialog);
     gt->addWidget(numberButton[0], 3, 0);
     gt->addWidget(dotButton, 3, 1);
     gt->addWidget(delButton, 3, 2);
@@ -372,6 +375,7 @@ void Dialog::prepareGameWidget() {
     quitButton = new QPushButton("退出", this);
     saveButton = new QPushButton("保存", this);
     loadButton = new QPushButton("载入", this);
+    withdrawButton->setDisabled(true);
     
     ht2->addWidget(withdrawButton, 0, Qt::AlignHCenter);
     ht2->addWidget(beginButton, 0, Qt::AlignHCenter);
@@ -384,6 +388,10 @@ void Dialog::prepareGameWidget() {
     saveButton->setFocusPolicy(Qt::NoFocus);
     loadButton->setFocusPolicy(Qt::NoFocus);
     
+    connect(quitButton, SIGNAL(clicked(bool)), this, SLOT(requestForQuit()));
+    connect(saveButton, SIGNAL(clicked(bool)), this, SLOT(requestForSave()));
+    connect(loadButton, SIGNAL(clicked(bool)), this, SLOT(requestForLoad()));
+    connect(withdrawButton, SIGNAL(clicked(bool)), this, SLOT(requestForWithdraw()));
     connect(beginButton, SIGNAL(clicked(bool)), this, SLOT(prepareToBegin()));
  
     //isGameBegin = true;
@@ -391,12 +399,33 @@ void Dialog::prepareGameWidget() {
     update();
 }
 
+void Dialog::requestForQuit() {
+    sendMessage("requestQuit");
+}
+
+void Dialog::requestForLoad() {
+    QString st = QFileDialog::getOpenFileName(this, "选取残局", "", "Text files (*.txt)");
+    if (st == "")
+        return;
+    QStringList list = st.split("/");
+    sendMessage("requestLoad#" + list[(int)list.size() - 1]);
+}
+
+void Dialog::requestForSave() {
+    sendMessage("requestSave");
+}
+
+void Dialog::requestForWithdraw() {
+    sendMessage("requestWithdraw");
+}
+
 void Dialog::prepareToBegin() {
     isMeBegin = true;
     sendMessage("start");
-    beginButton->setDown(true);
+    beginButton->setDisabled(true);
     if (isOpBegin) {
         isGameBegin = true;
+        connect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
         timer->start();
     }
 }
@@ -460,8 +489,24 @@ void Dialog::onTimerOut() {
     }
 }
 
+void Dialog::renewTime() {
+    timer->stop();
+    mySingleTime = 20;
+    mySingleTimeLCD->display(20);
+    opSingleTime = 20;
+    opSingleTimeLCD->display(20);
+    timer->start();
+}
+
+bool Dialog::checkNoMyChess() {
+    for (int i = 0; i < 15; ++i)
+        for (int j = 0; j < 15; ++j)
+            if (map->arr[i][j] == player)
+                return false;
+    return true;
+}
+
 void Dialog::calcRead() {
-    qDebug() << "calcRead";
     /*if (opAvatarPixmap.isNull()) {
         opAvatarPixmap.loadFromData(readWriteSocket->readAll());
         sendUsername();
@@ -469,6 +514,7 @@ void Dialog::calcRead() {
     }*/
     QString info;
     info = readWriteSocket->readAll();
+    qDebug() << "calcRead " << info;
     if (opUserName == "") {
         QStringList infoList2 = info.split("@");
         opAvatarFileName = infoList2[0];
@@ -482,14 +528,103 @@ void Dialog::calcRead() {
         isOpBegin = true;
         if (isMeBegin) {
             isGameBegin = true;
+            connect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
             timer->start();
         }
+        return;
+    }
+    if (info == "requestQuit") {
+        QMessageBox::StandardButton b1 = QMessageBox::question(NULL, "Request", "对方请求退出游戏");
+        if (b1 == QMessageBox::Yes) {
+            sendMessage("agreeQuit");
+            this->close();
+        }else {
+            sendMessage("disagreeQuit");
+        }
+        return;
+    }
+    if (info == "agreeQuit") {
+        this->close();
+        return;
+    }
+    if (info == "disagreeQuit") {
+        QMessageBox::about(NULL, "Result", "对方不同意退出游戏");
+        return;
+    }
+    if (info == "requestSave") {
+        QMessageBox::StandardButton b2 = QMessageBox::question(NULL, "Request", "对方请求保存残局");
+        if (b2 == QMessageBox::Yes) {
+            QTime time = QTime::currentTime();
+            map->save(QString::number(time.hour()) + "_" + QString::number(time.minute()) + ".txt");
+            sendMessage("agreeSave");
+        }else {
+            sendMessage("disagreeSave");
+        }
+        return;
+    }
+    if (info == "agreeSave") {
+        QTime time = QTime::currentTime();
+        map->save(QString::number(time.hour()) + "_" + QString::number(time.minute()) + ".txt");
+        return;
+    }
+    if (info == "disagreeSave") {
+        QMessageBox::about(NULL, "Result", "对方不同意保存残局");
+        return;
+    }
+    if (info.contains("requestLoad")) {
+        QStringList list1 = info.split("#");
+        QMessageBox::StandardButton b3 = QMessageBox::question(NULL, "Request", "对方请求加载残局" + list1[(int)list1.size() - 1]);
+        if (b3 == QMessageBox::Yes) {
+            map->load(list1[(int)list1.size() - 1]);
+            update();
+            sendMessage("agreeLoad#" + list1[(int)list1.size() - 1]);
+        }else {
+            sendMessage("disagreeLoad");
+        }
+        return;
+    }
+    if (info.contains("agreeLoad")) {
+        QStringList list2 = info.split("#");
+        map->load(list2[(int)list2.size() - 1]);
+        update();
+        return;
+    }
+    if (info == "disagreeLoad") {
+        QMessageBox::about(NULL, "Result", "对方不同意加载残局");
+        return;
+    }
+    if (info == "requestWithdraw") {
+        QMessageBox::StandardButton b4 = QMessageBox::question(NULL, "Request", "对方请求悔棋");
+        if (b4 == QMessageBox::Yes) {
+            sendMessage("agreeWithdraw");
+            map->pop(player ^ 1);
+            renewTime();
+        }else {
+            sendMessage("disagreeWithdraw");
+        }
+        return;
+    }
+    if (info == "agreeWithdraw") {
+        ++withDrawTime;
+        if (withDrawTime >= 2) {
+            withdrawButton->setDisabled(true);
+        }
+        map->pop(player);
+        if (checkNoMyChess()) {
+            withdrawButton->setDisabled(true);
+        }
+        renewTime();
+        return;
+    }
+    if (info == "disagreeWithdraw") {
+        QMessageBox::about(NULL, "Result", "对方不同意悔棋");
         return;
     }
     QStringList infoList = info.split("_");
     int x = infoList[0].toInt();
     int y = infoList[1].toInt();
     map->arr[x][y] = player ^ 1;
+    map->place.push_back(QPoint(x, y));
     
     changePlayer();
     /*if (map->curPlayer == Map::Black)
@@ -522,13 +657,17 @@ void Dialog::mousePressEvent(QMouseEvent *event) {
         }
     if (minDis > 400)
         return;
-    
+    if (map->arr[di][dj] != -1)
+        return;
     putPoint(di, dj);
     calcSend(di, dj);
 }
 
 void Dialog::putPoint(int x, int y) {
     map->arr[x][y] = player;
+    withDrawTime = 0;
+    withdrawButton->setEnabled(true);
+    map->place.push_back(QPoint(x, y));
     changePlayer();
     /*if (map->curPlayer == Map::Black)
         map->curPlayer = Map::White;
@@ -593,19 +732,36 @@ void Dialog::paintEvent(QPaintEvent *event) {
             else
                 DrawPoint(painter, i, j, 24, Qt::white);
         }
-
+    
+    if (isGameBegin) {
+        painter.setPen(Qt::blue);
+        painter.setBrush(Qt::NoBrush);
+        if (map->curPlayer == player) {
+            painter.drawRect(myInfoWidget->geometry());
+        }else {
+            painter.drawRect(opInfoWidget->geometry());
+        }
+    }
 }
 
 void Dialog::gameOver(bool isWin) {
-    disconnect(readWriteSocket, SIGNAL(readyRead()), this, SLOT(calcRead()));
+    //disconnect(readWriteSocket, SIGNAL(readyRead()), this, SLOT(calcRead()));
+    disconnect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
+    timer->stop();
     
     gameOverDialog = new QDialog();
     gameOverDialog->setWindowTitle("Game Over");
     gameOverDialog->setFixedSize(300, 200);
     QVBoxLayout *vt = new QVBoxLayout(gameOverDialog);
     QLabel *label = new QLabel(isWin ? "你赢了!" : "你输了!", gameOverDialog);
+    QLabel *myTimeLabel = new QLabel(gameOverDialog);
+    myTimeLabel->setText("你的总用时为" + QString::number(myTotalTime / 60) + "分" + QString::number(myTotalTime % 60) + "秒");
+    QLabel *opTimeLabel = new QLabel(gameOverDialog);
+    opTimeLabel->setText("对方的总用时为" + QString::number(opTotalTime / 60) + "分" + QString::number(opTotalTime % 60) + "秒");
     OKGameOverButton = new QPushButton("确定", gameOverDialog);
     vt->addWidget(label, 0, Qt::AlignHCenter);
+    vt->addWidget(myTimeLabel, 0, Qt::AlignHCenter);
+    vt->addWidget(opTimeLabel, 0, Qt::AlignHCenter);
     vt->addWidget(OKGameOverButton, 0, Qt::AlignHCenter);
     connect(OKGameOverButton, SIGNAL(clicked(bool)), gameOverDialog, SLOT(close()));
     gameOverDialog->show();
