@@ -8,6 +8,9 @@
 #include <QTcpSocket>
 #include <QLineEdit>
 #include <QMouseEvent>
+#include <QLabel>
+#include <QTimer>
+#include <QLCDNumber>
 #include <map.h>
 #include <gamelogic.h>
 
@@ -28,8 +31,11 @@ public:
     void calcSend(int, int);
     void putPoint(int, int);
     void gameOver(bool);
+    void sendMessage(QString);
+    void changePlayer();
     
 public slots:
+    void setNameAvatarWidget();
     void chooseFightModelWidget();
     void networkGameWidget();
     void prepareGameWidget();
@@ -42,6 +48,13 @@ public slots:
     void waitForConnect();
     void softKeyInput(QString);
     void calcRead();
+    void chooseAvatarFromFile();
+    void setMyInfo();
+    void prepareToRead();
+    void sendAvatar();
+    void sendUsername();
+    void prepareToBegin();
+    void onTimerOut();
     
 private:
     Ui::Dialog *ui;
@@ -49,11 +62,15 @@ private:
     bool isHost;
     bool isGameWidget;
     bool isGameBegin;
+    bool isOpBegin, isMeBegin;
+    int mySingleTime, opSingleTime;
+    int myTotalTime, opTotalTime;
     Map::Player player;
     Map *map;
     GameLogic *gameLogic;
     QString myIP;
-    QWidget *widget[10];
+    QString myUserName, opUserName, myAvatarFileName, opAvatarFileName;
+    QWidget *widget[10], *boardWidget, *myInfoWidget, *opInfoWidget;
     QPushButton *networkFightButton, *personAIFightButton;
     QPushButton *createHostButton, *joinHostButton;
     QPushButton *OKWaitButton, *cancelWaitButton;
@@ -61,7 +78,15 @@ private:
     QPushButton *OKGameOverButton;
     QPushButton *numberButton[10];
     QPushButton *dotButton, *delButton;
+    QPushButton *chooseAvatarButton, *OKchooseButton;
+    QPushButton *beginButton, *quitButton, *withdrawButton, *saveButton, *loadButton;
+    QPixmap myAvatarPixmap, opAvatarPixmap;
+    QLabel *chooseAvatarLabel, *myAvatarLabel, *opAvatarLabel, *myNameLabel, *opNameLabel;
+    QLineEdit *chooseNameEdit;
     QLineEdit *IPEdit;
+    QLCDNumber *mySingleTimeLCD, *myTotalTimeLCD;
+    QLCDNumber *opSingleTimeLCD, *opTotalTimeLCD;
+    QTimer *timer;
     QDialog *createHostDialog, *joinHostDialog, *gameOverDialog;
     QTcpServer *listenSocket;
     QTcpSocket *readWriteSocket;
