@@ -411,6 +411,7 @@ void Dialog::prepareGameWidget() {
 }
 
 void Dialog::requestForQuit() {
+    timer->stop();
     sendMessage("requestQuit");
 }
 
@@ -418,15 +419,18 @@ void Dialog::requestForLoad() {
     QString st = QFileDialog::getOpenFileName(this, "选取残局", "", "Text files (*.txt)");
     if (st == "")
         return;
+    timer->stop();
     QStringList list = st.split("/");
     sendMessage("requestLoad#" + list[(int)list.size() - 1]);
 }
 
 void Dialog::requestForSave() {
+    timer->stop();
     sendMessage("requestSave");
 }
 
 void Dialog::requestForWithdraw() {
+    timer->stop();
     sendMessage("requestWithdraw");
 }
 
@@ -571,79 +575,98 @@ void Dialog::calcRead() {
         return;
     }
     if (info == "requestQuit") {
+        timer->stop();
         QMessageBox::StandardButton b1 = QMessageBox::question(NULL, "Request", "对方请求退出游戏");
         if (b1 == QMessageBox::Yes) {
+            timer->start();
             sendMessage("agreeQuit");
             InitialGame();
             //this->close();
         }else {
+            timer->start();
             sendMessage("disagreeQuit");
         }
         return;
     }
     if (info == "agreeQuit") {
+        timer->start();
         InitialGame();
         //this->close();
         return;
     }
     if (info == "disagreeQuit") {
+        timer->start();
         QMessageBox::about(NULL, "Result", "对方不同意退出游戏");
         return;
     }
     if (info == "requestSave") {
+        timer->stop();
         QMessageBox::StandardButton b2 = QMessageBox::question(NULL, "Request", "对方请求保存残局");
         if (b2 == QMessageBox::Yes) {
+            timer->start();
             QTime time = QTime::currentTime();
             map->save(QString::number(time.hour()) + "_" + QString::number(time.minute()) + ".txt");
             sendMessage("agreeSave");
         }else {
+            timer->start();
             sendMessage("disagreeSave");
         }
         return;
     }
     if (info == "agreeSave") {
+        timer->start();
         QTime time = QTime::currentTime();
         map->save(QString::number(time.hour()) + "_" + QString::number(time.minute()) + ".txt");
         return;
     }
     if (info == "disagreeSave") {
+        timer->start();
         QMessageBox::about(NULL, "Result", "对方不同意保存残局");
         return;
     }
     if (info.contains("requestLoad")) {
+        timer->stop();
         QStringList list1 = info.split("#");
         QMessageBox::StandardButton b3 = QMessageBox::question(NULL, "Request", "对方请求加载残局" + list1[(int)list1.size() - 1]);
         if (b3 == QMessageBox::Yes) {
+            timer->start();
             map->load(list1[(int)list1.size() - 1]);
             update();
             sendMessage("agreeLoad#" + list1[(int)list1.size() - 1]);
         }else {
+            timer->start();
             sendMessage("disagreeLoad");
         }
         return;
     }
     if (info == "disagreeLoad") {
+        timer->start();
         QMessageBox::about(NULL, "Result", "对方不同意加载残局");
         return;
     }
     if (info.contains("agreeLoad")) {
+        timer->start();
         QStringList list2 = info.split("#");
         map->load(list2[(int)list2.size() - 1]);
         update();
         return;
     }
     if (info == "requestWithdraw") {
+        timer->stop();
         QMessageBox::StandardButton b4 = QMessageBox::question(NULL, "Request", "对方请求悔棋");
         if (b4 == QMessageBox::Yes) {
+            timer->start();
             sendMessage("agreeWithdraw");
             map->pop(player ^ 1);
             renewTime();
         }else {
+            timer->start();
             sendMessage("disagreeWithdraw");
         }
         return;
     }
     if (info == "agreeWithdraw") {
+        timer->start();
         ++withDrawTime;
         if (withDrawTime >= 2) {
             withdrawButton->setDisabled(true);
@@ -656,6 +679,7 @@ void Dialog::calcRead() {
         return;
     }
     if (info == "disagreeWithdraw") {
+        timer->start();
         QMessageBox::about(NULL, "Result", "对方不同意悔棋");
         return;
     }
