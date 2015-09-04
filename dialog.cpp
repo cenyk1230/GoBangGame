@@ -508,6 +508,7 @@ void Dialog::renewTime() {
     mySingleTimeLCD->display(20);
     opSingleTime = 20;
     opSingleTimeLCD->display(20);
+    update();
     timer->start();
 }
 
