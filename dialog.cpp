@@ -437,6 +437,7 @@ void Dialog::prepareToBegin() {
     if (isOpBegin) {
         isGameBegin = true;
         connect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
+        update();
         timer->start();
     }
 }
@@ -451,6 +452,7 @@ void Dialog::changePlayer() {
     }else {
         map->curPlayer = Map::Black;
     }
+    update();
     timer->start();
 }
 
@@ -562,6 +564,7 @@ void Dialog::calcRead() {
         if (isMeBegin) {
             isGameBegin = true;
             connect(timer, SIGNAL(timeout()), this, SLOT(onTimerOut()));
+            update();
             timer->start();
         }
         return;
