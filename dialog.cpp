@@ -622,14 +622,14 @@ void Dialog::calcRead() {
         }
         return;
     }
+    if (info == "disagreeLoad") {
+        QMessageBox::about(NULL, "Result", "对方不同意加载残局");
+        return;
+    }
     if (info.contains("agreeLoad")) {
         QStringList list2 = info.split("#");
         map->load(list2[(int)list2.size() - 1]);
         update();
-        return;
-    }
-    if (info == "disagreeLoad") {
-        QMessageBox::about(NULL, "Result", "对方不同意加载残局");
         return;
     }
     if (info == "requestWithdraw") {
